@@ -58,7 +58,11 @@ uvicorn app.main:app --port 8000
 - 首次启动会下载 `BAAI/bge-small-zh` 模型（约 100MB），国内可先 `set HF_ENDPOINT=https://hf-mirror.com`
 - 8G 显存机器想用 GPU 加速可自行安装 CUDA 版 torch
 
-### 4. Postman 验证链路
+### 4. 使用
+
+- **前端界面**：浏览器打开 http://localhost:8080（注册/登录 → 选知识库 → 上传文档 → 流式对话）
+- **API 文档**：http://localhost:8080/swagger-ui.html（Swagger UI，JWT 认证可直接调试）
+- **Postman 验证链路**：
 
 1. `POST /api/auth/register` — `{"username":"alice","password":"123456"}`
 2. `POST /api/auth/login` — 拿到 `data.token`
@@ -67,6 +71,12 @@ uvicorn app.main:app --port 8000
 5. `GET /api/documents/{docId}` — 等几秒后确认 `status` 为 `INDEXED`（失败为 `FAILED`，看 AI 服务日志）
 6. `POST /api/conversations` — `{"kbId":1}`，然后 `POST /api/conversations/{id}/messages` — `{"question":"..."}`
 7. 返回 `answer` + `citations`（文档名、片段、页码）
+
+## 测试与 CI
+
+- Java：`mvnw.cmd test`（JwtUtil / AuthService / ConversationService 单元测试）
+- Python：`cd ai-service && pip install -r requirements-dev.txt && python -m pytest tests/ -v`
+- CI：GitHub Actions（每次 push 自动跑 Java 构建测试 + Python pytest）
 
 ## API 一览
 
@@ -82,9 +92,11 @@ uvicorn app.main:app --port 8000
 
 ## 配置说明
 
-- `application.yml` 中 `app.jwt.secret` 与 `app.internal-token` 为占位值，生产环境务必更换
+- 全部敏感配置支持环境变量注入（默认值为本地开发占位）：`DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD`、`REDIS_HOST/REDIS_PORT`、`JWT_SECRET/JWT_EXPIRATION_MS`、`INTERNAL_TOKEN`、`AI_BASE_URL`
+- 生产环境务必通过环境变量设置 `JWT_SECRET` 和 `INTERNAL_TOKEN`，不要使用默认占位值
 - Python 侧 `.env` 的 `INTERNAL_TOKEN` 必须与 Java 侧一致
 - 上传限制：20MB，仅 PDF/DOCX/TXT（旧版 .doc 请先转 .docx）
+- 接口限流：认证接口 10 次/分钟/IP，问答接口 20 次/分钟/IP，其他业务接口 300 次/分钟/IP
 
 ## 已知边界（MVP）
 

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KnowledgeAgent · 企业知识库问答</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<!-- 登录/注册视图 -->
+<div id="auth-view" class="auth-view hidden">
+    <div class="auth-card">
+        <h1>KnowledgeAgent</h1>
+        <p class="subtitle">企业知识库智能问答</p>
+        <div class="auth-tabs">
+            <button id="tab-login" class="tab active">登录</button>
+            <button id="tab-register" class="tab">注册</button>
+        </div>
+        <form id="auth-form">
+            <input type="text" id="auth-username" placeholder="用户名" autocomplete="username" required>
+            <input type="password" id="auth-password" placeholder="密码" autocomplete="current-password" required>
+            <input type="email" id="auth-email" placeholder="邮箱（注册选填）" class="hidden">
+            <button type="submit" id="auth-submit" class="btn primary">登录</button>
+        </form>
+        <p id="auth-error" class="error hidden"></p>
+    </div>
+</div>
+
+<!-- 主界面 -->
+<div id="main-view" class="main-view hidden">
+    <header class="topbar">
+        <div class="brand">KnowledgeAgent</div>
+        <div class="user-box">
+            <span id="current-user"></span>
+            <button id="btn-logout" class="btn small">退出</button>
+        </div>
+    </header>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <span>知识库</span>
+                    <button id="btn-create-kb" class="btn small" title="新建知识库">＋</button>
+                </div>
+                <ul id="kb-list" class="list"></ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <span>对话</span>
+                    <button id="btn-new-conversation" class="btn small" title="新建对话">＋</button>
+                </div>
+                <ul id="conversation-list" class="list"></ul>
+            </div>
+        </aside>
+        <main class="chat-area">
+            <div id="chat-header" class="chat-header">
+                <span id="chat-title">请选择或创建对话</span>
+                <button id="btn-toggle-docs" class="btn small">文档管理</button>
+            </div>
+            <div id="chat-messages" class="chat-messages"></div>
+            <form id="chat-form" class="chat-input-bar">
+                <input type="text" id="chat-input" placeholder="输入问题，Enter 发送（支持多轮追问）" autocomplete="off">
+                <button type="submit" id="btn-send" class="btn primary">发送</button>
+            </form>
+        </main>
+        <aside id="docs-panel" class="docs-panel hidden">
+            <div class="docs-header">
+                <span>文档</span>
+                <button id="btn-close-docs" class="btn small">×</button>
+            </div>
+            <div class="docs-upload">
+                <input type="file" id="file-input" accept=".pdf,.docx,.doc,.txt" hidden>
+                <button id="btn-upload" class="btn primary">上传文档（PDF/Word/TXT ≤20MB）</button>
+            </div>
+            <ul id="doc-list" class="list"></ul>
+        </aside>
+    </div>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
