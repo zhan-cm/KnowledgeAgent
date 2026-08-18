@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  backend:
+    name: Java 后端（构建 + 测试）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: 构建并运行测试
+        run: ./mvnw -B test
+
+  ai-service:
+    name: Python AI 服务（pytest）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 安装测试依赖
+        run: pip install -r ai-service/requirements-dev.txt
+      - name: 运行 pytest
+        run: cd ai-service && python -m pytest tests/ -v
