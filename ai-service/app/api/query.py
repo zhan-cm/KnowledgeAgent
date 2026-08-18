@@ -4,8 +4,10 @@ import logging
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
+from ..core.config import settings
 from ..core.embedding import embed_texts
 from ..core.llm import generate, stream_generate
+from ..core.rerank import rerank
 from ..core.retrieval import search
 from ..models.schemas import Citation, QueryRequest, QueryResponse
 
@@ -19,7 +21,11 @@ def _history_dicts(req):
 
 def _retrieve(req):
     question_embedding = embed_texts([req.question])[0]
-    return search(question_embedding, req.kbIds, req.allowedDocumentIds, req.topK)
+    fetch_k = min(max(req.topK * 4, req.topK), settings.retrieval_k)
+    rows = search(question_embedding, req.kbIds, req.allowedDocumentIds, fetch_k)
+    if len(rows) > req.topK:
+        rows = rerank(req.question, rows, req.topK)
+    return rows
 
 
 def _to_citations(rows):

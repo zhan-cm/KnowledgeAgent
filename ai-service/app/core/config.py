@@ -8,6 +8,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent  # ai-service/
 load_dotenv(BASE_DIR / ".env")
 
 
+def resolve_local_path(name: str) -> str:
+    """本地路径优先解析为绝对路径（相对 ai-service/），否则原样返回（视为 HuggingFace 仓库名）"""
+    candidate = Path(name)
+    if candidate.is_dir():
+        return str(candidate.resolve())
+    absolute = BASE_DIR / name
+    if absolute.is_dir():
+        return str(absolute.resolve())
+    return name
+
+
 @dataclass
 class Settings:
     database_url: str = os.getenv("DATABASE_URL", "postgresql://admin:password@localhost:5432/knowledge_agent")
@@ -23,6 +34,9 @@ class Settings:
     consumer_name: str = os.getenv("CONSUMER_NAME", "index-worker-1")
     chunk_size: int = int(os.getenv("CHUNK_SIZE", "500"))
     chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "50"))
+    rerank_enabled: bool = os.getenv("RERANK_ENABLED", "true").lower() == "true"
+    rerank_model: str = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-base")
+    retrieval_k: int = int(os.getenv("RETRIEVAL_K", "20"))
 
 
 settings = Settings()

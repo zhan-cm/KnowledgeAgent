@@ -23,6 +23,7 @@ Postman/curl
 ```
 
 - 向量维度 512（`BAAI/bge-small-zh`），本地免费运行
+- 检索流程：向量召回 top20 → `bge-reranker-base` 交叉编码器重排 → 取 top5 给 LLM（可配置关闭）
 - 文档存本地 `data/documents/`，数据库只存相对路径
 - 索引流程：Java 存文件 → 发 Redis Stream 消息（含绝对路径）→ Python 消费解析入库 → 回调 Java 更新状态
 

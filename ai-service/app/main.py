@@ -6,6 +6,7 @@ from .api import internal, query
 from .core.config import settings
 from .core.embedding import get_model
 from .core.indexer import start_consumer
+from .core.rerank import get_model as get_rerank_model
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -19,6 +20,8 @@ app.include_router(internal.router)
 def startup():
     logger.info("正在加载 Embedding 模型: %s", settings.embedding_model)
     get_model()
+    if settings.rerank_enabled:
+        get_rerank_model()
     start_consumer()
 
 
