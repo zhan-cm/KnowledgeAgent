@@ -1,0 +1,10 @@
+fastapi>=0.109
+uvicorn[standard]>=0.27
+sentence-transformers>=3.0,<4.0
+torch>=2.6
+psycopg2-binary>=2.9.10
+redis>=5.0
+python-dotenv>=1.0
+pymupdf>=1.24.10
+python-docx>=1.1
+requests>=2.31

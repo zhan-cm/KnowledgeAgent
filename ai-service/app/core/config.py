@@ -1,0 +1,28 @@
+import os
+from dataclasses import dataclass
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent  # ai-service/
+load_dotenv(BASE_DIR / ".env")
+
+
+@dataclass
+class Settings:
+    database_url: str = os.getenv("DATABASE_URL", "postgresql://admin:password@localhost:5432/knowledge_agent")
+    redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    java_base_url: str = os.getenv("JAVA_BASE_URL", "http://localhost:8080")
+    internal_token: str = os.getenv("INTERNAL_TOKEN", "knowledge-agent-internal-token-2026-change-me")
+    deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
+    deepseek_base_url: str = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+    deepseek_model: str = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+    embedding_model: str = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-zh")
+    index_stream: str = os.getenv("INDEX_STREAM", "index-requests")
+    consumer_group: str = os.getenv("CONSUMER_GROUP", "index-group")
+    consumer_name: str = os.getenv("CONSUMER_NAME", "index-worker-1")
+    chunk_size: int = int(os.getenv("CHUNK_SIZE", "500"))
+    chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "50"))
+
+
+settings = Settings()

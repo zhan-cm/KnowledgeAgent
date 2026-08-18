@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: knowledge-postgres
+    environment:
+      POSTGRES_DB: knowledge_agent
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d knowledge_agent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: knowledge-redis
+    # 本机 6379 已被 Windows 原生 Redis 占用，容器映射到 6380
+    ports:
+      - "6380:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+  redisdata:

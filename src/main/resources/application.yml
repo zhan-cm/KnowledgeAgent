@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: KnowledgeAgent
+  datasource:
+    url: jdbc:postgresql://localhost:5432/knowledge_agent
+    username: admin
+    password: password
+  jpa:
+    hibernate:
+      # 表结构由 Flyway 统一管理
+      ddl-auto: none
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: localhost
+      port: 6380
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  jwt:
+    # 生产环境务必更换为随机长字符串
+    secret: knowledge-agent-jwt-secret-2026-please-change-me-in-production-0123456789
+    expiration-ms: 86400000
+  internal-token: knowledge-agent-internal-token-2026-change-me
+  ai:
+    base-url: http://localhost:8000
+  storage:
+    dir: data/documents
+  index-stream: index-requests
