@@ -1,11 +1,17 @@
 from pydantic import BaseModel, Field
 
 
+class HistoryMessage(BaseModel):
+    role: str
+    content: str
+
+
 class QueryRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=2000)
     kbIds: list[int] = Field(default_factory=list)
     allowedDocumentIds: list[int] = Field(default_factory=list)
     topK: int = Field(default=5, ge=1, le=20)
+    conversationHistory: list[HistoryMessage] = Field(default_factory=list)
 
 
 class Citation(BaseModel):

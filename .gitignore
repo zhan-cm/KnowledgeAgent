@@ -37,4 +37,6 @@ data/
 ai-service/venv/
 ai-service/.env
 ai-service/models/
+__pycache__/
+*.pyc
 *.log

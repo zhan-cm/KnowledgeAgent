@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -41,6 +42,15 @@ public class ConversationController {
                                                         HttpServletRequest httpRequest) {
         return ApiResponse.ok(conversationService.sendMessage(
                 conversationId, user.id(), request, httpRequest.getRemoteAddr()));
+    }
+
+    @PostMapping("/{conversationId}/messages/stream")
+    public SseEmitter streamMessage(@PathVariable Long conversationId,
+                                    @Valid @RequestBody SendMessageRequest request,
+                                    @AuthenticationPrincipal AuthUser user,
+                                    HttpServletRequest httpRequest) {
+        return conversationService.streamMessage(
+                conversationId, user.id(), request, httpRequest.getRemoteAddr());
     }
 
     @GetMapping("/{conversationId}/messages")

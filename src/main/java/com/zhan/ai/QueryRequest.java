@@ -17,4 +17,5 @@ public class QueryRequest {
     private List<Long> kbIds;
     private List<Long> allowedDocumentIds;
     private Integer topK;
+    private List<HistoryMessage> conversationHistory;
 }
