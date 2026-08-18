@@ -2,9 +2,9 @@ spring:
   application:
     name: KnowledgeAgent
   datasource:
-    url: jdbc:postgresql://localhost:5432/knowledge_agent
-    username: admin
-    password: password
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:knowledge_agent}
+    username: ${DB_USER:admin}
+    password: ${DB_PASSWORD:password}
   jpa:
     hibernate:
       # 表结构由 Flyway 统一管理
@@ -15,8 +15,8 @@ spring:
     locations: classpath:db/migration
   data:
     redis:
-      host: localhost
-      port: 6380
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6380}
   servlet:
     multipart:
       max-file-size: 20MB
@@ -31,14 +31,18 @@ management:
       exposure:
         include: health,info
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
 app:
   jwt:
-    # 生产环境务必更换为随机长字符串
-    secret: knowledge-agent-jwt-secret-2026-please-change-me-in-production-0123456789
-    expiration-ms: 86400000
-  internal-token: knowledge-agent-internal-token-2026-change-me
+    # 生产环境务必通过环境变量 JWT_SECRET 注入随机长字符串
+    secret: ${JWT_SECRET:knowledge-agent-jwt-secret-2026-please-change-me-in-production-0123456789}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  internal-token: ${INTERNAL_TOKEN:knowledge-agent-internal-token-2026-change-me}
   ai:
-    base-url: http://localhost:8000
+    base-url: ${AI_BASE_URL:http://localhost:8000}
   storage:
     dir: data/documents
   index-stream: index-requests
