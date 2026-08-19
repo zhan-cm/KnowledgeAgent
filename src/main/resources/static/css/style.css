@@ -64,3 +64,36 @@ body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f
 .status.FAILED { background: #f8d7da; color: #721c24; }
 
 .empty-tip { color: #aaa; font-size: 13px; text-align: center; padding: 30px 0; }
+
+/* 管理后台 */
+.admin-view { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.admin-card { background: #fff; border-radius: 12px; width: 860px; max-width: 94vw; max-height: 88vh; overflow-y: auto; padding: 24px; }
+.admin-header { display: flex; justify-content: space-between; align-items: center; font-size: 18px; font-weight: bold; margin-bottom: 16px; }
+.admin-overview { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.overview-item { background: #f5f6fa; border-radius: 8px; padding: 14px; text-align: center; }
+.overview-item .num { font-size: 24px; font-weight: bold; color: #4a69bd; }
+.overview-item .label { font-size: 12px; color: #888; margin-top: 4px; }
+.admin-section-title { margin: 20px 0 10px; font-size: 15px; color: #555; }
+.trend-chart { display: flex; align-items: flex-end; gap: 12px; height: 120px; padding: 10px; background: #fafafa; border-radius: 8px; }
+.trend-bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.trend-bar .bar { width: 100%; max-width: 40px; background: #6a89cc; border-radius: 4px 4px 0 0; min-height: 2px; }
+.trend-bar .day { font-size: 11px; color: #888; }
+.trend-bar .cnt { font-size: 11px; color: #4a69bd; font-weight: bold; }
+.audit-table-wrap { border-radius: 8px; overflow: hidden; border: 1px solid #eee; }
+.audit-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.audit-table th, .audit-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+.audit-table th { background: #f5f6fa; color: #666; }
+
+/* 弹窗 */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal-card { background: #fff; border-radius: 12px; width: 420px; max-width: 94vw; padding: 20px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: bold; margin-bottom: 14px; }
+.member-add { display: flex; gap: 8px; margin-bottom: 12px; }
+.member-add input, .member-add select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+.member-add input { flex: 1; }
+
+/* 反馈 */
+.feedback-bar { display: flex; gap: 8px; margin-top: 8px; }
+.feedback-btn { border: 1px solid #ddd; background: #fafafa; border-radius: 6px; cursor: pointer; padding: 2px 10px; font-size: 13px; }
+.feedback-btn.active { background: #e3e9ff; border-color: #4a69bd; }
+.member-btn { border: none; background: none; cursor: pointer; font-size: 14px; }

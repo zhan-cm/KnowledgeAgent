@@ -31,6 +31,7 @@
     <header class="topbar">
         <div class="brand">KnowledgeAgent</div>
         <div class="user-box">
+            <button id="btn-admin" class="btn small hidden">管理后台</button>
             <span id="current-user"></span>
             <button id="btn-logout" class="btn small">退出</button>
         </div>
@@ -74,6 +75,45 @@
             </div>
             <ul id="doc-list" class="list"></ul>
         </aside>
+    </div>
+</div>
+
+<!-- 管理后台 -->
+<div id="admin-view" class="admin-view hidden">
+    <div class="admin-card">
+        <div class="admin-header">
+            <span>管理后台</span>
+            <button id="btn-close-admin" class="btn small">×</button>
+        </div>
+        <div class="admin-overview" id="admin-overview"></div>
+        <h3 class="admin-section-title">近 7 天提问趋势</h3>
+        <div class="trend-chart" id="ask-trend"></div>
+        <h3 class="admin-section-title">最近审计日志</h3>
+        <div class="audit-table-wrap">
+            <table class="audit-table" id="audit-table">
+                <thead><tr><th>时间</th><th>用户</th><th>操作</th><th>对象</th><th>详情</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 成员管理 -->
+<div id="member-modal" class="modal hidden">
+    <div class="modal-card">
+        <div class="modal-header">
+            <span id="member-modal-title">成员管理</span>
+            <button id="btn-close-member" class="btn small">×</button>
+        </div>
+        <div class="member-add">
+            <input type="text" id="member-username" placeholder="用户名">
+            <select id="member-role">
+                <option value="VIEWER">可查看</option>
+                <option value="EDITOR">可编辑</option>
+            </select>
+            <button id="btn-add-member" class="btn primary small">添加</button>
+        </div>
+        <ul id="member-list" class="list"></ul>
     </div>
 </div>
 

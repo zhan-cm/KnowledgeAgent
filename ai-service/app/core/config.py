@@ -37,6 +37,7 @@ class Settings:
     rerank_enabled: bool = os.getenv("RERANK_ENABLED", "true").lower() == "true"
     rerank_model: str = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-base")
     retrieval_k: int = int(os.getenv("RETRIEVAL_K", "20"))
+    rewrite_enabled: bool = os.getenv("REWRITE_ENABLED", "true").lower() == "true"
 
 
 settings = Settings()

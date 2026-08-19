@@ -107,6 +107,17 @@ async function loadKbs() {
     li.dataset.id = kb.id;
     if (currentKb && currentKb.id === kb.id) li.classList.add('active');
     li.addEventListener('click', () => selectKb(kb));
+    if (currentUser && kb.createdBy === currentUser.id) {
+      const memberBtn = document.createElement('button');
+      memberBtn.textContent = '👥';
+      memberBtn.title = '成员管理';
+      memberBtn.className = 'member-btn';
+      memberBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openMembers(kb);
+      });
+      li.appendChild(memberBtn);
+    }
     list.appendChild(li);
   });
 }
@@ -162,7 +173,7 @@ async function selectConversation(conv) {
   $('#chat-messages').innerHTML = '';
   try {
     const messages = await api(`/api/conversations/${conv.id}/messages`);
-    messages.forEach((m) => renderMessage(m.role, m.content, m.citations));
+    messages.forEach((m) => renderMessage(m.role, m.content, m.citations, m.id));
   } catch (e) {
     /* 忽略 */
   }
@@ -188,7 +199,7 @@ async function createConversation() {
 
 /* ---------------- 消息渲染 ---------------- */
 
-function renderMessage(role, content, citations) {
+function renderMessage(role, content, citations, messageId) {
   const box = document.createElement('div');
   box.className = `msg ${role === 'USER' ? 'user' : 'assistant'}`;
   box.textContent = content || '';
@@ -205,8 +216,52 @@ function renderMessage(role, content, citations) {
     });
     box.appendChild(citeBox);
   }
+  if (role === 'ASSISTANT') renderFeedback(box, messageId);
   $('#chat-messages').appendChild(box);
   scrollToBottom();
+}
+
+/* ---------------- 反馈（点赞/点踩） ---------------- */
+
+const myFeedback = {};
+
+function renderFeedback(box, messageId) {
+  if (!messageId) return;
+  const bar = document.createElement('div');
+  bar.className = 'feedback-bar';
+  ['UP', 'DOWN'].forEach((rating) => {
+    const btn = document.createElement('button');
+    btn.textContent = rating === 'UP' ? '👍' : '👎';
+    btn.title = rating === 'UP' ? '回答有帮助' : '回答有问题';
+    btn.className = 'feedback-btn';
+    if (myFeedback[messageId] === rating) btn.classList.add('active');
+    btn.addEventListener('click', () => submitFeedback(messageId, rating, bar));
+    bar.appendChild(btn);
+  });
+  box.appendChild(bar);
+}
+
+async function submitFeedback(messageId, rating, bar) {
+  try {
+    if (myFeedback[messageId] === rating) {
+      await api(`/api/messages/${messageId}/feedback`, { method: 'DELETE' });
+      delete myFeedback[messageId];
+    } else {
+      await api(`/api/messages/${messageId}/feedback`, {
+        method: 'POST',
+        body: JSON.stringify({ rating }),
+      });
+      myFeedback[messageId] = rating;
+    }
+    bar.querySelectorAll('.feedback-btn').forEach((b) => b.classList.remove('active'));
+    if (myFeedback[messageId] === rating) {
+      bar.querySelectorAll('.feedback-btn').forEach((b) => {
+        if (b.textContent === (rating === 'UP' ? '👍' : '👎')) b.classList.add('active');
+      });
+    }
+  } catch (e) {
+    /* 忽略 */
+  }
 }
 
 function scrollToBottom() {
@@ -277,6 +332,7 @@ async function sendMessage() {
           cursor.remove();
           answerBox.textContent = done.answer || acc;
           renderCitations(answerBox, done.citations);
+          renderFeedback(answerBox, done.messageId);
           scrollToBottom();
         } else if (sse.event === 'error') {
           const err = JSON.parse(sse.data);
@@ -398,10 +454,95 @@ async function uploadDoc(file) {
   }
 }
 
+/* ---------------- 成员管理 ---------------- */
+
+let memberKbId = null;
+
+async function openMembers(kb) {
+  memberKbId = kb.id;
+  $('#member-modal-title').textContent = `成员管理 · ${kb.name}`;
+  $('#member-modal').classList.remove('hidden');
+  await loadMembers();
+}
+
+async function loadMembers() {
+  try {
+    const members = await api(`/api/kbs/${memberKbId}/members`);
+    const list = $('#member-list');
+    list.innerHTML = members.length ? '' : '<li class="empty-tip">暂无成员</li>';
+    members.forEach((m) => {
+      const li = document.createElement('li');
+      li.textContent = `${m.username}（${m.role === 'EDITOR' ? '可编辑' : '可查看'}）`;
+      const del = document.createElement('button');
+      del.textContent = '✕';
+      del.title = '移除成员';
+      del.addEventListener('click', async () => {
+        await api(`/api/kbs/${memberKbId}/members/${m.userId}`, { method: 'DELETE' });
+        loadMembers();
+      });
+      li.appendChild(del);
+      list.appendChild(li);
+    });
+  } catch (e) {
+    alert(e.message);
+    $('#member-modal').classList.add('hidden');
+  }
+}
+
+/* ---------------- 管理后台 ---------------- */
+
+async function openAdmin() {
+  $('#admin-view').classList.remove('hidden');
+  try {
+    const stats = await api('/api/admin/stats/overview');
+    const items = [
+      ['用户数', stats.userCount], ['知识库', stats.kbCount], ['文档数', stats.documentCount],
+      ['已索引文档', stats.indexedDocumentCount], ['失败文档', stats.failedDocumentCount],
+      ['对话数', stats.conversationCount], ['消息数', stats.messageCount], ['今日提问', stats.askCountToday],
+    ];
+    $('#admin-overview').innerHTML = items
+      .map(([label, num]) => `<div class="overview-item"><div class="num">${num}</div><div class="label">${label}</div></div>`)
+      .join('');
+  } catch (e) {
+    alert('无管理员权限：' + e.message);
+    $('#admin-view').classList.add('hidden');
+    return;
+  }
+  try {
+    const trend = await api('/api/admin/stats/ask-trend');
+    const max = Math.max(1, ...trend.map((t) => t.count));
+    $('#ask-trend').innerHTML = trend
+      .map((t) => `<div class="trend-bar">
+          <div class="cnt">${t.count}</div>
+          <div class="bar" style="height:${Math.round((t.count / max) * 80)}px"></div>
+          <div class="day">${t.day.slice(5)}</div></div>`)
+      .join('');
+  } catch (e) { /* 忽略 */ }
+  await loadAuditLogs();
+}
+
+async function loadAuditLogs() {
+  try {
+    const page = await api('/api/admin/audit-logs?page=0&size=20');
+    const rows = page.content || [];
+    const tbody = document.querySelector('#audit-table tbody');
+    tbody.innerHTML = rows.map((log) => `<tr>
+        <td>${(log.createdAt || '').replace('T', ' ').slice(0, 19)}</td>
+        <td>${log.userId || '-'}</td>
+        <td>${log.action}</td>
+        <td>${log.resourceType || '-'}${log.resourceId ? '#' + log.resourceId : ''}</td>
+        <td>${(log.detail || '').slice(0, 60)}</td></tr>`).join('') ||
+      '<tr><td colspan="5" class="empty-tip">暂无日志</td></tr>';
+  } catch (e) { /* 忽略 */ }
+}
+
 /* ---------------- 入口 ---------------- */
 
 function enterApp() {
   showMain();
+  if (currentUser && currentUser.role === 'ADMIN') {
+    $('#btn-admin').classList.remove('hidden');
+  }
   loadKbs();
 }
 
@@ -409,6 +550,24 @@ function initMain() {
   $('#btn-logout').addEventListener('click', logout);
   $('#btn-create-kb').addEventListener('click', createKb);
   $('#btn-new-conversation').addEventListener('click', createConversation);
+  $('#btn-admin').addEventListener('click', openAdmin);
+  $('#btn-close-admin').addEventListener('click', () => $('#admin-view').classList.add('hidden'));
+  $('#btn-close-member').addEventListener('click', () => $('#member-modal').classList.add('hidden'));
+  $('#btn-add-member').addEventListener('click', async () => {
+    const username = $('#member-username').value.trim();
+    const role = $('#member-role').value;
+    if (!username) return;
+    try {
+      await api(`/api/kbs/${memberKbId}/members`, {
+        method: 'POST',
+        body: JSON.stringify({ username, role }),
+      });
+      $('#member-username').value = '';
+      loadMembers();
+    } catch (e) {
+      alert(e.message);
+    }
+  });
   $('#chat-form').addEventListener('submit', (e) => {
     e.preventDefault();
     sendMessage();

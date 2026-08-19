@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 
 from ..core.config import settings
 from ..core.embedding import embed_texts
-from ..core.llm import generate, stream_generate
+from ..core.llm import generate, rewrite_question, stream_generate
 from ..core.rerank import rerank
 from ..core.retrieval import search
 from ..models.schemas import Citation, QueryRequest, QueryResponse
@@ -20,11 +20,15 @@ def _history_dicts(req):
 
 
 def _retrieve(req):
-    question_embedding = embed_texts([req.question])[0]
+    history = _history_dicts(req)
+    query_text = req.question
+    if history and settings.rewrite_enabled:
+        query_text = rewrite_question(req.question, history)
+    question_embedding = embed_texts([query_text])[0]
     fetch_k = min(max(req.topK * 4, req.topK), settings.retrieval_k)
     rows = search(question_embedding, req.kbIds, req.allowedDocumentIds, fetch_k)
     if len(rows) > req.topK:
-        rows = rerank(req.question, rows, req.topK)
+        rows = rerank(query_text, rows, req.topK)
     return rows
 
 
