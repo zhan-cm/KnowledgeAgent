@@ -29,6 +29,16 @@ Postman/curl
 
 ## 快速启动
 
+### 方式一：一键脚本（推荐，Windows）
+
+```bat
+start-all.bat    # 自动启动 Docker → 容器 → Java 后端 → Python 服务 → 打开浏览器
+stop-all.bat     # 停止后端与 Python 服务（可选停容器）
+restart-ai.bat   # 仅重启 Python 服务（改完 AI 代码后使用，日志留在当前窗口）
+```
+
+### 方式二：手动逐步启动
+
 ### 1. 启动基础组件（Docker）
 
 ```bash
