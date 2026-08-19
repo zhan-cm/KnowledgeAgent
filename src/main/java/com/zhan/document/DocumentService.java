@@ -4,6 +4,7 @@ import com.zhan.audit.AuditService;
 import com.zhan.common.BusinessException;
 import com.zhan.entity.Document;
 import com.zhan.entity.DocumentStatus;
+import com.zhan.kb.KbAccessService;
 import com.zhan.repository.DocumentRepository;
 import com.zhan.repository.KnowledgeBaseRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,12 +27,11 @@ public class DocumentService {
     private final FileStorageService fileStorageService;
     private final IndexProducer indexProducer;
     private final AuditService auditService;
+    private final KbAccessService kbAccessService;
 
     @Transactional
     public Document upload(MultipartFile file, Long kbId, Long userId, String ip) {
-        if (!kbRepository.existsById(kbId)) {
-            throw BusinessException.notFound("知识库不存在");
-        }
+        kbAccessService.requireEdit(kbId, userId);
         if (file.isEmpty()) {
             throw BusinessException.badRequest("上传文件不能为空");
         }
@@ -52,25 +52,31 @@ public class DocumentService {
         return document;
     }
 
-    public Document get(Long docId) {
-        return documentRepository.findById(docId)
-                .orElseThrow(() -> BusinessException.notFound("文档不存在"));
+    public Document get(Long docId, Long userId) {
+        Document document = get(docId);
+        kbAccessService.requireView(document.getKbId(), userId);
+        return document;
     }
 
-    public List<Document> listByKb(Long kbId) {
-        if (!kbRepository.existsById(kbId)) {
-            throw BusinessException.notFound("知识库不存在");
-        }
+    public List<Document> listByKb(Long kbId, Long userId) {
+        kbAccessService.requireView(kbId, userId);
         return documentRepository.findByKbIdOrderByCreatedAtDesc(kbId);
     }
 
-    public List<Document> listAll() {
-        return documentRepository.findAllByOrderByCreatedAtDesc();
+    public List<Document> listAll(Long userId) {
+        List<Long> accessibleKbIds = kbRepository.findAccessibleByUser(userId).stream()
+                .map(kb -> kb.getId())
+                .toList();
+        if (accessibleKbIds.isEmpty()) {
+            return List.of();
+        }
+        return documentRepository.findByKbIdInOrderByCreatedAtDesc(accessibleKbIds);
     }
 
     @Transactional
     public void delete(Long docId, Long userId, String ip) {
         Document document = get(docId);
+        kbAccessService.requireEdit(document.getKbId(), userId);
         fileStorageService.delete(document.getFilePath());
         documentRepository.delete(document);
         auditService.log(userId, "DELETE", "DOCUMENT", docId, "删除文档: " + document.getTitle(), ip);
@@ -79,6 +85,7 @@ public class DocumentService {
     @Transactional
     public Document reindex(Long docId, Long userId, String ip) {
         Document document = get(docId);
+        kbAccessService.requireEdit(document.getKbId(), userId);
         document.setStatus(DocumentStatus.PENDING);
         document.setVersion(document.getVersion() + 1);
         indexProducer.sendIndexRequest(document.getId(), document.getKbId(),
@@ -96,8 +103,8 @@ public class DocumentService {
         }
     }
 
-    public String preview(Long docId) {
-        Document document = get(docId);
+    public String preview(Long docId, Long userId) {
+        Document document = get(docId, userId);
         if (!"txt".equalsIgnoreCase(document.getFileType())) {
             throw BusinessException.badRequest("仅支持预览 TXT 文件，PDF/Word 请下载原文件查看");
         }
@@ -106,5 +113,10 @@ public class DocumentService {
         } catch (IOException e) {
             throw new BusinessException(500, "读取文件失败: " + e.getMessage());
         }
+    }
+
+    private Document get(Long docId) {
+        return documentRepository.findById(docId)
+                .orElseThrow(() -> BusinessException.notFound("文档不存在"));
     }
 }

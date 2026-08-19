@@ -11,8 +11,8 @@ import com.zhan.conversation.dto.SendMessageRequest;
 import com.zhan.entity.Conversation;
 import com.zhan.entity.Message;
 import com.zhan.entity.MessageRole;
+import com.zhan.kb.KbAccessService;
 import com.zhan.repository.ConversationRepository;
-import com.zhan.repository.KnowledgeBaseRepository;
 import com.zhan.repository.MessageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,19 +41,19 @@ class ConversationServiceTest {
     @Mock
     private MessageRepository messageRepository;
     @Mock
-    private KnowledgeBaseRepository kbRepository;
-    @Mock
     private AiClient aiClient;
     @Mock
     private AuditService auditService;
+    @Mock
+    private KbAccessService kbAccessService;
 
     private ConversationService conversationService;
 
     @BeforeEach
     void setUp() {
         conversationService = new ConversationService(
-                conversationRepository, messageRepository, kbRepository,
-                aiClient, auditService, new ObjectMapper());
+                conversationRepository, messageRepository,
+                aiClient, auditService, kbAccessService, new ObjectMapper());
     }
 
     private Conversation conversation(Long userId) {

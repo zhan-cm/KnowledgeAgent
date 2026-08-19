@@ -18,8 +18,8 @@ import com.zhan.conversation.dto.SendMessageResponse;
 import com.zhan.entity.Conversation;
 import com.zhan.entity.Message;
 import com.zhan.entity.MessageRole;
+import com.zhan.kb.KbAccessService;
 import com.zhan.repository.ConversationRepository;
-import com.zhan.repository.KnowledgeBaseRepository;
 import com.zhan.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,16 +43,14 @@ public class ConversationService {
 
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
-    private final KnowledgeBaseRepository kbRepository;
     private final AiClient aiClient;
     private final AuditService auditService;
+    private final KbAccessService kbAccessService;
     private final ObjectMapper objectMapper;
 
     @Transactional
     public Conversation create(Long userId, CreateConversationRequest request, String ip) {
-        if (!kbRepository.existsById(request.getKbId())) {
-            throw BusinessException.notFound("知识库不存在");
-        }
+        kbAccessService.requireView(request.getKbId(), userId);
         Conversation conversation = Conversation.builder()
                 .userId(userId)
                 .kbId(request.getKbId())
@@ -70,6 +68,7 @@ public class ConversationService {
     @Transactional(noRollbackFor = BusinessException.class)
     public SendMessageResponse sendMessage(Long conversationId, Long userId, SendMessageRequest request, String ip) {
         Conversation conversation = getOwnedConversation(conversationId, userId);
+        requireKbAccess(conversation, userId);
         List<HistoryMessage> history = buildHistory(conversationId);
 
         messageRepository.save(Message.builder()
@@ -91,7 +90,7 @@ public class ConversationService {
             throw e;
         }
 
-        messageRepository.save(Message.builder()
+        Message assistantMessage = messageRepository.save(Message.builder()
                 .conversationId(conversationId)
                 .role(MessageRole.ASSISTANT)
                 .content(aiResponse.getAnswer())
@@ -101,6 +100,7 @@ public class ConversationService {
         auditService.log(userId, "ASK", "CONVERSATION", conversationId,
                 "提问: " + truncate(request.getQuestion(), 100), ip);
         return SendMessageResponse.builder()
+                .messageId(assistantMessage.getId())
                 .answer(aiResponse.getAnswer())
                 .citations(aiResponse.getCitations())
                 .build();
@@ -108,6 +108,7 @@ public class ConversationService {
 
     public SseEmitter streamMessage(Long conversationId, Long userId, SendMessageRequest request, String ip) {
         Conversation conversation = getOwnedConversation(conversationId, userId);
+        requireKbAccess(conversation, userId);
         List<HistoryMessage> history = buildHistory(conversationId);
 
         messageRepository.save(Message.builder()
@@ -130,7 +131,7 @@ public class ConversationService {
                     }
                 });
 
-                messageRepository.save(Message.builder()
+                Message assistantMessage = messageRepository.save(Message.builder()
                         .conversationId(conversationId)
                         .role(MessageRole.ASSISTANT)
                         .content(result.answer())
@@ -140,6 +141,7 @@ public class ConversationService {
                         "提问(流式): " + truncate(request.getQuestion(), 100), ip);
 
                 SendMessageResponse done = SendMessageResponse.builder()
+                        .messageId(assistantMessage.getId())
                         .answer(result.answer())
                         .citations(result.citations())
                         .build();
@@ -203,6 +205,12 @@ public class ConversationService {
             throw BusinessException.forbidden("无权访问该对话");
         }
         return conversation;
+    }
+
+    private void requireKbAccess(Conversation conversation, Long userId) {
+        if (conversation.getKbId() != null) {
+            kbAccessService.requireView(conversation.getKbId(), userId);
+        }
     }
 
     private MessageDto toDto(Message message) {

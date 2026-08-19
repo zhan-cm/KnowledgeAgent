@@ -14,6 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class SendMessageResponse {
 
+    private Long messageId;
     private String answer;
     private List<Citation> citations;
 }

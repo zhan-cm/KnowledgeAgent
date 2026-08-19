@@ -27,13 +27,17 @@ public class DocumentController {
     }
 
     @GetMapping
-    public ApiResponse<List<Document>> list(@RequestParam(required = false) Long kbId) {
-        return ApiResponse.ok(kbId == null ? documentService.listAll() : documentService.listByKb(kbId));
+    public ApiResponse<List<Document>> list(@RequestParam(required = false) Long kbId,
+                                            @AuthenticationPrincipal AuthUser user) {
+        return ApiResponse.ok(kbId == null
+                ? documentService.listAll(user.id())
+                : documentService.listByKb(kbId, user.id()));
     }
 
     @GetMapping("/{docId}")
-    public ApiResponse<Document> get(@PathVariable Long docId) {
-        return ApiResponse.ok(documentService.get(docId));
+    public ApiResponse<Document> get(@PathVariable Long docId,
+                                     @AuthenticationPrincipal AuthUser user) {
+        return ApiResponse.ok(documentService.get(docId, user.id()));
     }
 
     @DeleteMapping("/{docId}")
@@ -45,8 +49,9 @@ public class DocumentController {
     }
 
     @GetMapping("/{docId}/preview")
-    public ApiResponse<String> preview(@PathVariable Long docId) {
-        return ApiResponse.ok(documentService.preview(docId));
+    public ApiResponse<String> preview(@PathVariable Long docId,
+                                       @AuthenticationPrincipal AuthUser user) {
+        return ApiResponse.ok(documentService.preview(docId, user.id()));
     }
 
     @PostMapping("/{docId}/reindex")
