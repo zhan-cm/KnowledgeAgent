@@ -1,0 +1,13 @@
+data/
+ai-service/
+target/
+.git/
+*.log
+*.md
+.env
+start-all.bat
+stop-all.bat
+restart-ai.bat
+docker-compose*.yml
+Dockerfile*
+.dockerignore

@@ -1,0 +1,80 @@
+# 生产/全栈部署：PostgreSQL + Redis + Java 后端 + Python AI 服务
+# 用法：docker compose -f docker-compose.prod.yml up -d --build
+# 需提前准备环境变量：DEEPSEEK_API_KEY（必填）、JWT_SECRET、INTERNAL_TOKEN
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: knowledge_agent
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d knowledge_agent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: admin
+      DB_PASSWORD: password
+      DB_NAME: knowledge_agent
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AI_BASE_URL: http://ai-service:8000
+      JWT_SECRET: ${JWT_SECRET:-knowledge-agent-jwt-secret-2026-please-change-me-in-production-0123456789}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-knowledge-agent-internal-token-2026-change-me}
+    volumes:
+      - documents:/app/data/documents
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://admin:password@postgres:5432/knowledge_agent
+      REDIS_URL: redis://redis:6379/0
+      JAVA_BASE_URL: http://backend:8080
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-knowledge-agent-internal-token-2026-change-me}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:?请在环境变量或 .env 中设置 DEEPSEEK_API_KEY}
+      EMBEDDING_MODEL: /app/models/bge-small-zh
+      RERANK_MODEL: /app/models/bge-reranker-base
+    volumes:
+      - ./ai-service/models:/app/models:ro
+      - documents:/app/data/documents
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:
+  redisdata:
+  documents:

@@ -83,6 +83,23 @@ uvicorn app.main:app --port 8000
 6. `POST /api/conversations` — `{"kbId":1}`，然后 `POST /api/conversations/{id}/messages` — `{"question":"..."}`
 7. 返回 `answer` + `citations`（文档名、片段、页码）
 
+## 容器化部署（全栈）
+
+一键把 PostgreSQL + Redis + Java 后端 + Python AI 服务全部容器化（用于部署到服务器）：
+
+```bash
+# 需先设置环境变量：DEEPSEEK_API_KEY（必填）、JWT_SECRET、INTERNAL_TOKEN
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+- 前端 + API 文档：http://服务器:8080
+- `ai-service/models/` 以只读卷挂载进 AI 容器（模型不打进镜像，构建更快）
+- `data/documents/` 通过命名卷 `documents` 同时挂载到后端与 AI 容器同一路径 `/app/data/documents`（因为 Redis Stream 传递的是绝对路径，两容器必须一致）
+- 后端多阶段构建（Maven 打包 → JRE 运行），配置全部走环境变量
+- 生产环境务必通过环境变量注入 `JWT_SECRET`、`INTERNAL_TOKEN`、`DEEPSEEK_API_KEY`，不要用默认占位值
+
+> 注意：首次构建 AI 镜像需下载 torch（约 2GB），耗时较长；国内可给 Docker 配置镜像加速器。
+
 ## 测试与 CI
 
 - Java：`mvnw.cmd test`（JwtUtil / AuthService / ConversationService 单元测试）
