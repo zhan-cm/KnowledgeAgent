@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 
 from ..core.config import settings
 from ..core.embedding import embed_texts
-from ..core.hybrid import bm25_rank, rrf_fuse
+from ..core.hybrid import hybrid_rank
 from ..core.llm import generate, rewrite_question, stream_generate
 from ..core.rerank import rerank
 from ..core.retrieval import fetch_all_chunks, search
@@ -32,11 +32,10 @@ def _retrieve(req):
     vector_rows = search(question_embedding, req.kbIds, req.allowedDocumentIds, fetch_k)
     if settings.hybrid_enabled:
         try:
-            all_chunks = fetch_all_chunks(req.kbIds, req.allowedDocumentIds)
-            bm25_rows = bm25_rank(query_text, all_chunks, fetch_k)
-            fused_ids = rrf_fuse([vector_rows, bm25_rows])
-            by_id = {c["id"]: c for c in all_chunks}
-            rows = [by_id[i] for i in fused_ids if i in by_id][:fetch_k]
+            rows = hybrid_rank(
+                query_text, req.kbIds, req.allowedDocumentIds,
+                lambda: fetch_all_chunks(req.kbIds, req.allowedDocumentIds),
+                vector_rows, fetch_k)
         except Exception:
             logger.exception("混合检索失败，退回向量检索")
             rows = vector_rows

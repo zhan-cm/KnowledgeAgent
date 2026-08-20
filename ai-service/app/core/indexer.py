@@ -9,6 +9,7 @@ import requests
 from .config import settings
 from .chunking import chunk_text
 from .embedding import embed_texts
+from .hybrid import invalidate_for_kb
 from .parsing import parse_file
 from .retrieval import get_connection
 
@@ -66,6 +67,7 @@ def _process(fields):
         raise ValueError("文档分块后无内容")
     embeddings = embed_texts([c["text"] for c in chunks])
     _insert_chunks(document_id, kb_id, chunks, embeddings)
+    invalidate_for_kb(kb_id)
 
 
 def _insert_chunks(document_id, kb_id, chunks, embeddings):
