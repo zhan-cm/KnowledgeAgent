@@ -1,6 +1,7 @@
 package com.zhan.admin;
 
 import com.zhan.admin.dto.AskTrendPoint;
+import com.zhan.admin.dto.FeedbackStats;
 import com.zhan.admin.dto.OverviewStats;
 import com.zhan.common.ApiResponse;
 import com.zhan.entity.AuditLog;
@@ -30,6 +31,11 @@ public class AdminController {
     @GetMapping("/stats/ask-trend")
     public ApiResponse<List<AskTrendPoint>> askTrend() {
         return ApiResponse.ok(adminService.askTrend());
+    }
+
+    @GetMapping("/stats/feedback")
+    public ApiResponse<FeedbackStats> feedbackStats() {
+        return ApiResponse.ok(adminService.feedbackStats());
     }
 
     @GetMapping("/audit-logs")
