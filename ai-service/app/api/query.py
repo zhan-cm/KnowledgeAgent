@@ -6,9 +6,10 @@ from fastapi.responses import StreamingResponse
 
 from ..core.config import settings
 from ..core.embedding import embed_texts
+from ..core.hybrid import bm25_rank, rrf_fuse
 from ..core.llm import generate, rewrite_question, stream_generate
 from ..core.rerank import rerank
-from ..core.retrieval import search
+from ..core.retrieval import fetch_all_chunks, search
 from ..models.schemas import Citation, QueryRequest, QueryResponse
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,21 @@ def _retrieve(req):
         query_text = rewrite_question(req.question, history)
     question_embedding = embed_texts([query_text])[0]
     fetch_k = min(max(req.topK * 4, req.topK), settings.retrieval_k)
-    rows = search(question_embedding, req.kbIds, req.allowedDocumentIds, fetch_k)
+
+    vector_rows = search(question_embedding, req.kbIds, req.allowedDocumentIds, fetch_k)
+    if settings.hybrid_enabled:
+        try:
+            all_chunks = fetch_all_chunks(req.kbIds, req.allowedDocumentIds)
+            bm25_rows = bm25_rank(query_text, all_chunks, fetch_k)
+            fused_ids = rrf_fuse([vector_rows, bm25_rows])
+            by_id = {c["id"]: c for c in all_chunks}
+            rows = [by_id[i] for i in fused_ids if i in by_id][:fetch_k]
+        except Exception:
+            logger.exception("混合检索失败，退回向量检索")
+            rows = vector_rows
+    else:
+        rows = vector_rows
+
     if len(rows) > req.topK:
         rows = rerank(query_text, rows, req.topK)
     return rows

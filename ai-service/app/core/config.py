@@ -38,6 +38,8 @@ class Settings:
     rerank_model: str = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-base")
     retrieval_k: int = int(os.getenv("RETRIEVAL_K", "20"))
     rewrite_enabled: bool = os.getenv("REWRITE_ENABLED", "true").lower() == "true"
+    hybrid_enabled: bool = os.getenv("HYBRID_ENABLED", "true").lower() == "true"
+    rrf_k: int = int(os.getenv("RRF_K", "60"))
 
 
 settings = Settings()

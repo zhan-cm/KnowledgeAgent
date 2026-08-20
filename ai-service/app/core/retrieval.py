@@ -29,3 +29,20 @@ def search(question_embedding, kb_ids, allowed_document_ids, top_k):
     with get_connection() as conn, conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(sql, params)
         return cur.fetchall()
+
+
+def fetch_all_chunks(kb_ids, allowed_document_ids=None):
+    """拉取知识库全部分块（供 BM25 混合检索用），字段与 search 返回保持一致"""
+    sql = """
+        SELECT dc.id, dc.document_id, d.title, dc.chunk_text, dc.page_number
+        FROM document_chunks dc
+        JOIN documents d ON d.id = dc.document_id
+        WHERE dc.kb_id = ANY(%s::bigint[])
+    """
+    params = [kb_ids]
+    if allowed_document_ids:
+        sql += " AND dc.document_id = ANY(%s::bigint[])"
+        params.append(allowed_document_ids)
+    with get_connection() as conn, conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(sql, params)
+        return cur.fetchall()
