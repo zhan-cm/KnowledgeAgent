@@ -40,6 +40,7 @@ class Settings:
     rewrite_enabled: bool = os.getenv("REWRITE_ENABLED", "true").lower() == "true"
     hybrid_enabled: bool = os.getenv("HYBRID_ENABLED", "true").lower() == "true"
     rrf_k: int = int(os.getenv("RRF_K", "60"))
+    sensitive_words: str = os.getenv("SENSITIVE_WORDS", "")
 
 
 settings = Settings()
