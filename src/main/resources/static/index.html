@@ -70,8 +70,8 @@
                 <button id="btn-close-docs" class="btn small">×</button>
             </div>
             <div class="docs-upload">
-                <input type="file" id="file-input" accept=".pdf,.docx,.doc,.txt" hidden>
-                <button id="btn-upload" class="btn primary">上传文档（PDF/Word/TXT ≤20MB）</button>
+                <input type="file" id="file-input" accept=".pdf,.docx,.doc,.txt,.md,.markdown,.xlsx,.pptx" multiple hidden>
+                <button id="btn-upload" class="btn primary">上传文档（PDF/Word/TXT/MD/Excel/PPT ≤20MB，可多选）</button>
             </div>
             <ul id="doc-list" class="list"></ul>
         </aside>
@@ -88,6 +88,14 @@
         <div class="admin-overview" id="admin-overview"></div>
         <h3 class="admin-section-title">近 7 天提问趋势</h3>
         <div class="trend-chart" id="ask-trend"></div>
+        <h3 class="admin-section-title">问答反馈质量</h3>
+        <div class="admin-overview" id="feedback-overview"></div>
+        <div class="audit-table-wrap" style="margin-top:10px">
+            <table class="audit-table" id="down-voted-table">
+                <thead><tr><th>时间</th><th>问题</th><th>被点踩的回答</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
         <h3 class="admin-section-title">最近审计日志</h3>
         <div class="audit-table-wrap">
             <table class="audit-table" id="audit-table">

@@ -10,8 +10,12 @@ def parse_file(file_path):
         return _parse_docx(file_path)
     if ext == ".doc":
         raise ValueError("暂不支持旧版 .doc 格式，请转换为 .docx 后重新上传")
-    if ext == ".txt":
+    if ext in (".txt", ".md", ".markdown"):
         return _parse_txt(file_path)
+    if ext == ".xlsx":
+        return _parse_xlsx(file_path)
+    if ext == ".pptx":
+        return _parse_pptx(file_path)
     raise ValueError(f"不支持的文件类型: {ext}")
 
 
@@ -43,3 +47,39 @@ def _parse_txt(path):
         except UnicodeDecodeError:
             continue
     raise ValueError("无法识别文本文件编码")
+
+
+def _parse_xlsx(path):
+    import openpyxl
+
+    workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    pages = []
+    try:
+        for i, sheet in enumerate(workbook.worksheets, 1):
+            lines = []
+            for row in sheet.iter_rows(values_only=True):
+                cells = [str(c).strip() for c in row if c is not None and str(c).strip()]
+                if cells:
+                    lines.append(" | ".join(cells))
+            if lines:
+                pages.append(("\n".join(lines), i))
+    finally:
+        workbook.close()
+    return pages
+
+
+def _parse_pptx(path):
+    from pptx import Presentation
+
+    presentation = Presentation(path)
+    pages = []
+    for i, slide in enumerate(presentation.slides, 1):
+        texts = []
+        for shape in slide.shapes:
+            if shape.has_text_frame:
+                text = shape.text_frame.text.strip()
+                if text:
+                    texts.append(text)
+        if texts:
+            pages.append(("\n".join(texts), i))
+    return pages

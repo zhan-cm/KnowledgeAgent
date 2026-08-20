@@ -1,6 +1,7 @@
 package com.zhan.document;
 
 import com.zhan.common.ApiResponse;
+import com.zhan.document.dto.BatchUploadResponse;
 import com.zhan.entity.Document;
 import com.zhan.security.AuthUser;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +25,14 @@ public class DocumentController {
                                         @AuthenticationPrincipal AuthUser user,
                                         HttpServletRequest httpRequest) {
         return ApiResponse.ok(documentService.upload(file, kbId, user.id(), httpRequest.getRemoteAddr()));
+    }
+
+    @PostMapping("/upload-batch")
+    public ApiResponse<BatchUploadResponse> uploadBatch(@RequestParam("files") MultipartFile[] files,
+                                                        @RequestParam("kbId") Long kbId,
+                                                        @AuthenticationPrincipal AuthUser user,
+                                                        HttpServletRequest httpRequest) {
+        return ApiResponse.ok(documentService.uploadBatch(files, kbId, user.id(), httpRequest.getRemoteAddr()));
     }
 
     @GetMapping

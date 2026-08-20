@@ -432,22 +432,32 @@ async function loadDocs() {
   }
 }
 
-async function uploadDoc(file) {
+async function uploadDocs(fileList) {
   if (!currentKb) {
     alert('请先选择知识库');
     return;
   }
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
   const form = new FormData();
-  form.append('file', file);
+  files.forEach((f) => form.append('files', f));
   form.append('kbId', currentKb.id);
   try {
-    const resp = await fetch('/api/documents/upload', {
+    const resp = await fetch('/api/documents/upload-batch', {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + token },
       body: form,
     });
     const body = await resp.json();
     if (body.code !== 0) throw new Error(body.message);
+    const result = body.data;
+    const failed = result.items.filter((it) => !it.success);
+    if (failed.length) {
+      alert(`上传完成：成功 ${result.successCount}/${result.total}\n失败：\n` +
+        failed.map((it) => `- ${it.filename}: ${it.error || '未知错误'}`).join('\n'));
+    } else {
+      alert(`成功上传 ${result.successCount} 个文档`);
+    }
     loadDocs();
   } catch (e) {
     alert(e.message);
@@ -518,7 +528,32 @@ async function openAdmin() {
           <div class="day">${t.day.slice(5)}</div></div>`)
       .join('');
   } catch (e) { /* 忽略 */ }
+  await loadFeedbackStats();
   await loadAuditLogs();
+}
+
+async function loadFeedbackStats() {
+  try {
+    const stats = await api('/api/admin/stats/feedback');
+    const rate = (stats.downRate * 100).toFixed(1);
+    $('#feedback-overview').innerHTML = [
+      ['总反馈', stats.totalFeedback], ['点赞', stats.upCount],
+      ['点踩', stats.downCount], ['点踩率', rate + '%'],
+    ].map(([label, num]) => `<div class="overview-item"><div class="num">${num}</div><div class="label">${label}</div></div>`).join('');
+    const tbody = document.querySelector('#down-voted-table tbody');
+    const rows = stats.downVoted || [];
+    tbody.innerHTML = rows.map((d) => `<tr>
+        <td>${(d.createdAt || '').replace('T', ' ').slice(0, 19)}</td>
+        <td>${escapeHtml(d.question || '')}</td>
+        <td>${escapeHtml(d.answer || '')}</td></tr>`).join('') ||
+      '<tr><td colspan="3" class="empty-tip">暂无差评</td></tr>';
+  } catch (e) { /* 忽略 */ }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 async function loadAuditLogs() {
@@ -580,8 +615,7 @@ function initMain() {
   });
   $('#btn-upload').addEventListener('click', () => $('#file-input').click());
   $('#file-input').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) uploadDoc(file);
+    if (e.target.files.length) uploadDocs(e.target.files);
     e.target.value = '';
   });
   setInterval(() => {

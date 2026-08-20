@@ -16,7 +16,8 @@ import java.util.UUID;
 @Service
 public class FileStorageService {
 
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "doc", "docx", "txt");
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
+            "pdf", "doc", "docx", "txt", "md", "markdown", "xlsx", "pptx");
 
     private final Path cwd;
     private final Path baseDir;

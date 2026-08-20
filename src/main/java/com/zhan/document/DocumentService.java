@@ -2,6 +2,8 @@ package com.zhan.document;
 
 import com.zhan.audit.AuditService;
 import com.zhan.common.BusinessException;
+import com.zhan.document.dto.BatchUploadItem;
+import com.zhan.document.dto.BatchUploadResponse;
 import com.zhan.entity.Document;
 import com.zhan.entity.DocumentStatus;
 import com.zhan.kb.KbAccessService;
@@ -15,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -31,6 +34,39 @@ public class DocumentService {
 
     @Transactional
     public Document upload(MultipartFile file, Long kbId, Long userId, String ip) {
+        return doUpload(file, kbId, userId, ip);
+    }
+
+    public BatchUploadResponse uploadBatch(MultipartFile[] files, Long kbId, Long userId, String ip) {
+        kbAccessService.requireEdit(kbId, userId);
+        List<BatchUploadItem> items = new ArrayList<>();
+        int success = 0;
+        for (MultipartFile file : files) {
+            try {
+                Document document = doUpload(file, kbId, userId, ip);
+                items.add(BatchUploadItem.builder()
+                        .filename(file.getOriginalFilename())
+                        .documentId(document.getId())
+                        .success(true)
+                        .build());
+                success++;
+            } catch (Exception e) {
+                log.warn("批量上传失败: {}", file.getOriginalFilename(), e);
+                items.add(BatchUploadItem.builder()
+                        .filename(file.getOriginalFilename())
+                        .success(false)
+                        .error(e.getMessage())
+                        .build());
+            }
+        }
+        return BatchUploadResponse.builder()
+                .total(files.length)
+                .successCount(success)
+                .items(items)
+                .build();
+    }
+
+    private Document doUpload(MultipartFile file, Long kbId, Long userId, String ip) {
         kbAccessService.requireEdit(kbId, userId);
         if (file.isEmpty()) {
             throw BusinessException.badRequest("上传文件不能为空");
