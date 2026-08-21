@@ -10,6 +10,7 @@ from .config import settings
 from .chunking import chunk_text
 from .embedding import embed_texts
 from .hybrid import invalidate_for_kb
+from .metrics import INDEX_DURATION, INDEX_TOTAL
 from .parsing import parse_file
 from .retrieval import get_connection
 
@@ -59,15 +60,17 @@ def _process(fields):
     kb_id = int(fields["kbId"])
     file_path = fields["filePath"]
 
-    pages = parse_file(file_path)
-    if not pages:
-        raise ValueError("文档解析后无文本内容（可能是扫描版 PDF）")
-    chunks = chunk_text(pages, settings.chunk_size, settings.chunk_overlap)
-    if not chunks:
-        raise ValueError("文档分块后无内容")
-    embeddings = embed_texts([c["text"] for c in chunks])
-    _insert_chunks(document_id, kb_id, chunks, embeddings)
-    invalidate_for_kb(kb_id)
+    INDEX_TOTAL.inc()
+    with INDEX_DURATION.time():
+        pages = parse_file(file_path)
+        if not pages:
+            raise ValueError("文档解析后无文本内容（可能是扫描版 PDF）")
+        chunks = chunk_text(pages, settings.chunk_size, settings.chunk_overlap)
+        if not chunks:
+            raise ValueError("文档分块后无内容")
+        embeddings = embed_texts([c["text"] for c in chunks])
+        _insert_chunks(document_id, kb_id, chunks, embeddings)
+        invalidate_for_kb(kb_id)
 
 
 def _insert_chunks(document_id, kb_id, chunks, embeddings):

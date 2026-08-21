@@ -3,6 +3,9 @@ package com.zhan.ai;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zhan.common.BusinessException;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -27,9 +30,12 @@ public class AiClient {
     private final HttpClient streamHttpClient;
     private final ObjectMapper objectMapper;
     private final String baseUrl;
+    private final Counter queryCounter;
+    private final Timer queryTimer;
+    private final Timer streamTimer;
 
     public AiClient(RestClient.Builder builder, @Value("${app.ai.base-url}") String baseUrl,
-                    ObjectMapper objectMapper) {
+                    ObjectMapper objectMapper, MeterRegistry meterRegistry) {
         this.baseUrl = baseUrl;
         this.objectMapper = objectMapper;
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -43,9 +49,17 @@ public class AiClient {
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
+        this.queryCounter = meterRegistry.counter("ai.query.count");
+        this.queryTimer = meterRegistry.timer("ai.query.duration", "type", "query");
+        this.streamTimer = meterRegistry.timer("ai.query.duration", "type", "stream");
     }
 
     public QueryResponse query(QueryRequest request) {
+        queryCounter.increment();
+        return queryTimer.record(() -> doQuery(request));
+    }
+
+    private QueryResponse doQuery(QueryRequest request) {
         try {
             return restClient.post()
                     .uri("/query")
@@ -63,6 +77,11 @@ public class AiClient {
     }
 
     public StreamResult streamQuery(QueryRequest request, Consumer<String> onDelta) {
+        queryCounter.increment();
+        return streamTimer.record(() -> doStreamQuery(request, onDelta));
+    }
+
+    private StreamResult doStreamQuery(QueryRequest request, Consumer<String> onDelta) {
         HttpRequest httpRequest;
         try {
             httpRequest = HttpRequest.newBuilder()

@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  # Java 后端指标（问答次数、问答耗时）
+  - job_name: 'knowledgeagent-backend'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+
+  # Python AI 服务指标（检索/生成/索引耗时）
+  - job_name: 'knowledgeagent-ai'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:8000']

@@ -8,6 +8,7 @@ from ..core.config import settings
 from ..core.embedding import embed_texts
 from ..core.hybrid import hybrid_rank
 from ..core.llm import generate, rewrite_question, stream_generate
+from ..core.metrics import QUERY_DURATION, QUERY_TOTAL
 from ..core.rerank import rerank
 from ..core.retrieval import fetch_all_chunks, search
 from ..core.sensitive import contains as contains_sensitive, mask as mask_sensitive
@@ -61,11 +62,14 @@ def query(req: QueryRequest) -> QueryResponse:
         raise HTTPException(status_code=400, detail="kbIds 不能为空")
     if contains_sensitive(req.question):
         return QueryResponse(answer="抱歉，您的问题包含敏感内容，无法回答。", citations=[])
+    QUERY_TOTAL.inc()
     try:
-        rows = _retrieve(req)
+        with QUERY_DURATION.labels(phase="retrieval").time():
+            rows = _retrieve(req)
         if not rows:
             return QueryResponse(answer="知识库中没有找到与问题相关的资料。", citations=[])
-        answer = mask_sensitive(generate(req.question, rows, _history_dicts(req)))
+        with QUERY_DURATION.labels(phase="generation").time():
+            answer = mask_sensitive(generate(req.question, rows, _history_dicts(req)))
         return QueryResponse(answer=answer, citations=_to_citations(rows))
     except HTTPException:
         raise
@@ -88,8 +92,10 @@ def query_stream(req: QueryRequest):
             yield _sse({"type": "delta", "content": "抱歉，您的问题包含敏感内容，无法回答。"})
             yield _sse({"type": "done"})
             return
+        QUERY_TOTAL.inc()
         try:
-            rows = _retrieve(req)
+            with QUERY_DURATION.labels(phase="retrieval").time():
+                rows = _retrieve(req)
             citations = [
                 {"documentId": r["document_id"], "title": r["title"],
                  "chunkText": r["chunk_text"], "page": r["page_number"]}

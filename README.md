@@ -90,6 +90,20 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 > 注意：首次构建 AI 镜像需下载 torch（约 2GB），耗时较长；国内可给 Docker 配置镜像加速器。
 
+## 可观测性（Prometheus）
+
+- 后端指标：http://localhost:8080/actuator/prometheus（问答次数 `ai_query_count`、问答耗时 `ai_query_duration_seconds`）
+- AI 服务指标：http://localhost:8000/metrics（检索/生成耗时 `ai_query_duration_seconds{phase=...}`、索引耗时 `ai_index_duration_seconds`）
+- 用 Prometheus 抓取（已提供 `monitoring/prometheus.yml`）：
+
+```bash
+docker run -d --name prometheus -p 9090:9090 \
+  -v "$(pwd)/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml" \
+  prom/prometheus
+```
+
+然后浏览器打开 http://localhost:9090，即可查询/画图（后续可接 Grafana）。
+
 ## 测试与 CI
 
 - Java：`mvnw.cmd test`（JwtUtil / AuthService / ConversationService 单元测试）
