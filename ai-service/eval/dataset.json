@@ -1,0 +1,8 @@
+[
+  {"question": "出差住宿费标准是多少？", "expected": "travel-policy"},
+  {"question": "员工迟到会有什么处罚？", "expected": "attendance"},
+  {"question": "办公用品多少钱需要审批？", "expected": "procurement"},
+  {"question": "工作满一年能休几天年假？", "expected": "employee-handbook"},
+  {"question": "国际出差需要什么审批？", "expected": "travel-policy"},
+  {"question": "餐补每天多少钱？", "expected": "travel-policy"}
+]

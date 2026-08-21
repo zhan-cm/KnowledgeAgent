@@ -119,6 +119,11 @@ OAUTH2_ENABLED=true OAUTH2_CLIENT_ID=xxx OAUTH2_CLIENT_SECRET=xxx mvnw.cmd sprin
 - 登录用户名为 `github_{login}`，自动建档（角色 USER）
 - 企业生产可把 `OAuth2Config` 里的 GitHub 换成企业微信/钉钉/通用 OIDC（需要对应平台的应用注册与回调）
 
+## 检索质量评测与数据备份
+
+- **评测集**：`ai-service/eval/dataset.json` 存「问题→预期文档」，`python eval/run_eval.py` 跑一遍并输出命中率（Recall@K），每次调检索参数后跑一次做对比
+- **数据备份**：`powershell -File scripts/backup.ps1` 把 PostgreSQL 全量备份到 `backups/`，输出里含恢复命令
+
 ## 测试与 CI
 
 - Java：`mvnw.cmd test`（JwtUtil / AuthService / ConversationService 单元测试）
