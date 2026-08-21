@@ -49,3 +49,7 @@ app:
   storage:
     dir: data/documents
   index-stream: index-requests
+  oauth2:
+    enabled: ${OAUTH2_ENABLED:false}
+    client-id: ${OAUTH2_CLIENT_ID:}
+    client-secret: ${OAUTH2_CLIENT_SECRET:}

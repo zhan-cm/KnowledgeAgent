@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>登录中...</title>
+</head>
+<body>
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const user = params.get('user');
+    if (token) {
+        localStorage.setItem('ka_token', token);
+        if (user) {
+            try {
+                localStorage.setItem('ka_user', user);
+            } catch (e) {
+                localStorage.removeItem('ka_user');
+            }
+        }
+    }
+    window.location.replace('/');
+</script>
+</body>
+</html>

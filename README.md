@@ -104,6 +104,21 @@ docker run -d --name prometheus -p 9090:9090 \
 
 然后浏览器打开 http://localhost:9090，即可查询/画图（后续可接 Grafana）。
 
+## OAuth2 登录（可选）
+
+默认关闭。开启后员工可用第三方账号（示例为 GitHub）登录，自动映射到本地用户并签发 JWT：
+
+1. 到 https://github.com/settings/developers 新建 OAuth App，回调地址填 `http://localhost:8080/login/oauth2/code/github`
+2. 设置环境变量后启动：
+
+```bash
+OAUTH2_ENABLED=true OAUTH2_CLIENT_ID=xxx OAUTH2_CLIENT_SECRET=xxx mvnw.cmd spring-boot:run
+```
+
+- 前端登录页会出现"GitHub 登录"入口，走标准 OAuth2 授权码流程
+- 登录用户名为 `github_{login}`，自动建档（角色 USER）
+- 企业生产可把 `OAuth2Config` 里的 GitHub 换成企业微信/钉钉/通用 OIDC（需要对应平台的应用注册与回调）
+
 ## 测试与 CI
 
 - Java：`mvnw.cmd test`（JwtUtil / AuthService / ConversationService 单元测试）
