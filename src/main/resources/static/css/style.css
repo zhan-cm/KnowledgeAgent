@@ -20,6 +20,11 @@ body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .error { color: #e74c3c; margin-top: 10px; font-size: 13px; }
 
+.oauth-divider { display: flex; align-items: center; margin: 16px 0; color: #bbb; font-size: 12px; }
+.oauth-divider::before, .oauth-divider::after { content: ''; flex: 1; height: 1px; background: #eee; }
+.oauth-divider span { padding: 0 10px; }
+.oauth-btn { display: block; width: 100%; text-align: center; text-decoration: none; background: #24292f; color: #fff; }
+
 /* 主界面 */
 .main-view { display: flex; flex-direction: column; height: 100vh; }
 .topbar { height: 52px; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
